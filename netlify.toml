@@ -2,22 +2,12 @@
   publish = "public"
   functions = "netlify/functions"
 
-[functions]
-  included_files = [
-    "config.py",
-    "gemini_client.py",
-    "parser.py",
-    "utils.py"
-  ]
-
-# Map /analyze → serverless function so the frontend can POST /analyze directly
 [[redirects]]
   from = "/analyze"
   to = "/.netlify/functions/analyze"
   status = 200
   force = true
 
-# Health check
 [[redirects]]
   from = "/health"
   to = "/.netlify/functions/analyze"
