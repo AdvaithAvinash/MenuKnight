@@ -148,8 +148,18 @@
       border-left: 4px solid #c0392b;
       padding: 0.6rem 0.9rem;
       border-radius: 0 8px 8px 0;
-      font-weight: 500;
+    }
+
+    .dish-name {
+      font-weight: 600;
       font-size: 0.95rem;
+    }
+
+    .dish-desc {
+      font-size: 0.82rem;
+      color: #666;
+      margin-top: 0.2rem;
+      line-height: 1.4;
     }
 
     .count-badge {
@@ -298,7 +308,12 @@
           return;
         }
 
-        const items = data.dishes.map(d => `<li>${escHtml(d)}</li>`).join('');
+        const items = (data.results || data.dishes.map(d => ({ dish: d, description: '' })))
+          .map(({ dish, description }) => `
+            <li>
+              <div class="dish-name">${escHtml(dish)}</div>
+              ${description ? `<div class="dish-desc">${escHtml(description)}</div>` : ''}
+            </li>`).join('');
         results.innerHTML = `
           <h2>Dishes found <span class="count-badge">${data.count}</span></h2>
           <ul class="dish-list">${items}</ul>
