@@ -2,4 +2,4 @@ requests
 python-dotenv
 Pillow
 pytest
-flask
+flask  # local dev server only (api.py) — not used on Vercel
