@@ -262,24 +262,33 @@
       if (!selectedFile) return;
 
       btn.disabled = true;
-      status.textContent = '⏳ Sending to Gemini Vision…';
+      status.textContent = '⏳ Reading image…';
       results.style.display = 'none';
       results.innerHTML = '';
 
-      const formData = new FormData();
-      formData.append('image', selectedFile);
-
       try {
-        const res = await fetch('/analyze', { method: 'POST', body: formData });
+        // Read file as base64 and send as JSON — avoids multipart parsing on Netlify
+        const base64 = await readFileAsBase64(selectedFile);
+        status.textContent = '⏳ Sending to Gemini Vision…';
 
-        // Parse response — guard against HTML error pages (e.g. Netlify 404/500)
+        const res = await fetch('/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: base64,
+            mimeType: selectedFile.type,
+            filename: selectedFile.name,
+          }),
+        });
+
+        // Guard against HTML error pages (404/500) before calling .json()
         const contentType = res.headers.get('content-type') || '';
         let data;
         if (contentType.includes('application/json')) {
           data = await res.json();
         } else {
           const text = await res.text();
-          throw new Error(`Server returned HTTP ${res.status}:\n${text.slice(0, 300)}`);
+          throw new Error(`Server returned HTTP ${res.status} — check Netlify function logs.\n\n${text.slice(0, 400)}`);
         }
 
         if (!res.ok) {
@@ -289,7 +298,7 @@
           return;
         }
 
-        const items = data.dishes.map(d => `<li>${d}</li>`).join('');
+        const items = data.dishes.map(d => `<li>${escHtml(d)}</li>`).join('');
         results.innerHTML = `
           <h2>Dishes found <span class="count-badge">${data.count}</span></h2>
           <ul class="dish-list">${items}</ul>
@@ -308,6 +317,15 @@
         btn.disabled = false;
       }
     });
+
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]); // strip "data:...;base64," prefix
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
 
     function escHtml(str) {
       return String(str)
