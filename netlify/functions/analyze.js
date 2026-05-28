@@ -7,23 +7,23 @@ const EXTRACT_PROMPT =
   "Ignore prices, calorie counts, section headers, and descriptions. " +
   "Return one dish name per line, nothing else.";
 
-// Free-tier Gemini models that support vision, tried in order
+// Models confirmed present for this key via ListModels, vision-capable, tried in order
 const MODELS = [
-  "gemini-1.5-flash",
-  "gemini-1.5-flash-latest",
-  "gemini-1.5-flash-001",
+  "gemini-2.5-flash",
   "gemini-2.0-flash",
-  "gemini-2.0-flash-exp",
+  "gemini-2.0-flash-001",
+  "gemini-flash-latest",
+  "gemini-2.5-flash-lite",
 ];
+
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 // ── Gemini call with model fallback ───────────────────────────────────────────
 async function callGemini(image, mimeType) {
   let lastErr = "No models tried";
 
   for (const model of MODELS) {
-    const url =
-      `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent` +
-      `?key=${GEMINI_API_KEY}`;
+    const url = `${GEMINI_BASE}/${model}:generateContent?key=${GEMINI_API_KEY}`;
 
     let res;
     try {
@@ -44,18 +44,21 @@ async function callGemini(image, mimeType) {
       continue;
     }
 
-    if (res.status === 404) {
-      lastErr = `Model not available: ${model}`;
-      continue; // try next model
-    }
+    // Read body once for both error reporting and success parsing
+    const bodyText = await res.text();
 
-    if (!res.ok) {
-      const body = await res.text();
-      lastErr = `${model} returned ${res.status}: ${body}`;
+    if (res.status === 404) {
+      // Include actual API message so we can see the real reason
+      lastErr = `${model} → 404: ${bodyText.slice(0, 200)}`;
       continue;
     }
 
-    const data = await res.json();
+    if (!res.ok) {
+      lastErr = `${model} → ${res.status}: ${bodyText.slice(0, 200)}`;
+      continue;
+    }
+
+    const data = JSON.parse(bodyText);
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     return { text, model };
   }
