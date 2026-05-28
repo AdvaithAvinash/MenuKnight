@@ -3,9 +3,26 @@ import json
 import sys
 
 from image_loader import load_image
+from gemini_client import extract_dishes_from_image
+from parser import parse_dish_list
 from utils import get_logger
 
 logger = get_logger(__name__)
+
+
+def run_pipeline(image_path: str) -> dict:
+    logger.info("=== IdliPeek pipeline start ===")
+
+    image_data = load_image(image_path)
+    logger.info(f"Loaded: {image_data['filename']} ({image_data['mime_type']})")
+
+    raw_text = extract_dishes_from_image(image_data["base64"], image_data["mime_type"])
+    logger.info(f"Raw Gemini output:\n{raw_text}")
+
+    dishes = parse_dish_list(raw_text)
+    logger.info(f"Extracted dishes: {dishes}")
+
+    return {"filename": image_data["filename"], "dishes": dishes, "count": len(dishes)}
 
 
 def main():
@@ -15,20 +32,7 @@ def main():
     parser.add_argument("image", help="Path to menu image (jpg/png/webp)")
     args = parser.parse_args()
 
-    logger.info("Starting IdliPeek pipeline")
-
-    image_data = load_image(args.image)
-    logger.info(f"Loaded: {image_data['filename']} ({image_data['mime_type']})")
-    logger.info(f"Base64 length: {len(image_data['base64'])} chars")
-
-    # Phases 2–8 will extend this pipeline
-    result = {
-        "filename": image_data["filename"],
-        "mime_type": image_data["mime_type"],
-        "base64_length": len(image_data["base64"]),
-        "status": "image loaded — Gemini extraction not yet implemented",
-    }
-
+    result = run_pipeline(args.image)
     print(json.dumps(result, indent=2))
 
 
