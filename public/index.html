@@ -8,6 +8,16 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>IdliPeek — Peek before you pick</title>
+
+  <!-- Clerk JS — loaded from Clerk's CDN (derived from publishable key) -->
+  <script
+    async
+    crossorigin="anonymous"
+    data-clerk-publishable-key="pk_test_Z2FtZS1saW9uLTUyLmNsZXJrLmFjY291bnRzLmRldiQ"
+    src="https://game-lion-52.clerk.accounts.dev/.well-known/clerk.browser.js"
+    type="text/javascript"
+  ></script>
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -19,77 +29,96 @@
     html, body { height: 100%; background: var(--bg); color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
-    body { display: flex; flex-direction: column; min-height: 100dvh; padding-bottom: var(--safe-b); }
 
-    header { background: var(--red); color: #fff; padding: 1rem 1.25rem 0.85rem;
-      display: flex; align-items: center; gap: 0.6rem; position: sticky; top: 0; z-index: 10; }
-    header h1 { font-size: 1.3rem; font-weight: 800; }
-    header p  { font-size: 0.77rem; opacity: 0.85; }
+    /* ── Auth screen ──────────────────────────────────────────────────────── */
+    #auth-screen {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 100dvh; padding: 1.5rem;
+      background: var(--bg); gap: 1.5rem;
+    }
+    #auth-screen header {
+      text-align: center;
+    }
+    #auth-screen header h1 { font-size: 2rem; font-weight: 800; color: var(--red); }
+    #auth-screen header p  { color: var(--muted); margin-top: .3rem; font-size: .95rem; }
 
-    main { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column;
-      gap: 0.9rem; max-width: 600px; width: 100%; margin: 0 auto; }
+    /* ── App screen ───────────────────────────────────────────────────────── */
+    #app-screen {
+      display: none; flex-direction: column;
+      min-height: 100dvh; padding-bottom: var(--safe-b);
+    }
 
-    /* ── Upload card ── */
-    .upload-card { background: var(--card); border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.07); overflow: hidden; }
+    /* ── Shared header ────────────────────────────────────────────────────── */
+    .app-header {
+      background: var(--red); color: #fff; padding: 1rem 1.25rem 0.85rem;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .app-header .brand h1 { font-size: 1.3rem; font-weight: 800; }
+    .app-header .brand p  { font-size: .77rem; opacity: .85; }
 
+    /* Clerk UserButton container */
+    #user-button { display: flex; align-items: center; }
+
+    /* ── Main scroll area ─────────────────────────────────────────────────── */
+    main { flex: 1; overflow-y: auto; padding: 1rem; display: flex;
+      flex-direction: column; gap: .9rem; max-width: 600px; width: 100%; margin: 0 auto; }
+
+    /* ── Upload card ──────────────────────────────────────────────────────── */
+    .upload-card { background: var(--card); border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.07); overflow: hidden; }
     .drop-zone { position: relative; padding: 2rem 1rem; text-align: center; cursor: pointer;
-      border: 2px dashed var(--border); border-radius: 14px; margin: 0.75rem;
+      border: 2px dashed var(--border); border-radius: 14px; margin: .75rem;
       min-height: 130px; display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 0.45rem; transition: border-color .2s, background .2s; }
+      justify-content: center; gap: .45rem; transition: border-color .2s, background .2s; }
     .drop-zone.drag-over { border-color: var(--red); background: #fef3e2; }
     .drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-    .drop-zone .icon { font-size: 2rem; }
-    .drop-zone .label { font-weight: 700; font-size: 0.97rem; color: #333; }
-    .drop-zone .sub   { font-size: 0.78rem; color: var(--muted); }
+    .drop-zone .icon  { font-size: 2rem; }
+    .drop-zone .label { font-weight: 700; font-size: .97rem; color: #333; }
+    .drop-zone .sub   { font-size: .78rem; color: var(--muted); }
 
     #preview-wrap { position: relative; }
     #preview { width: 100%; max-height: 240px; object-fit: cover; display: none; }
-    #preview-clear { display: none; position: absolute; top: 0.5rem; right: 0.5rem;
+    #preview-clear { display: none; position: absolute; top: .5rem; right: .5rem;
       background: rgba(0,0,0,.5); color: #fff; border: none; border-radius: 50%;
       width: 32px; height: 32px; font-size: 1rem; cursor: pointer; }
 
-    .upload-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; padding: 0.75rem; }
-
-    .btn-camera { display: flex; align-items: center; justify-content: center; gap: 0.4rem;
-      padding: 0.85rem; background: var(--card); border: 2px solid var(--border); border-radius: 10px;
-      font-size: 0.9rem; font-weight: 600; color: #444; cursor: pointer; position: relative;
+    .upload-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; padding: .75rem; }
+    .btn-camera { display: flex; align-items: center; justify-content: center; gap: .4rem;
+      padding: .85rem; background: var(--card); border: 2px solid var(--border); border-radius: 10px;
+      font-size: .9rem; font-weight: 600; color: #444; cursor: pointer; position: relative;
       transition: border-color .15s; min-height: 48px; }
     .btn-camera:active { border-color: var(--red); background: #fef3e2; }
     .btn-camera input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-
-    .btn-analyze { display: flex; align-items: center; justify-content: center; gap: 0.4rem;
-      padding: 0.85rem; background: var(--red); color: #fff; border: none; border-radius: 10px;
-      font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: background .15s, opacity .2s;
-      min-height: 48px; }
+    .btn-analyze { display: flex; align-items: center; justify-content: center; gap: .4rem;
+      padding: .85rem; background: var(--red); color: #fff; border: none; border-radius: 10px;
+      font-size: .9rem; font-weight: 700; cursor: pointer; transition: background .15s, opacity .2s; min-height: 48px; }
     .btn-analyze:disabled { opacity: .45; cursor: not-allowed; }
     .btn-analyze:not(:disabled):active { background: var(--red-dark); }
 
-    /* ── Progress ── */
-    #statusEl { text-align: center; font-size: 0.84rem; color: var(--muted); min-height: 1.1em; padding: 0 .25rem; }
+    /* ── Progress / status ────────────────────────────────────────────────── */
+    #statusEl { text-align: center; font-size: .84rem; color: var(--muted); min-height: 1.1em; padding: 0 .25rem; }
     .progress { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; display: none; }
     .progress.active { display: block; }
     .progress::after { content: ''; display: block; height: 100%; width: 40%; background: var(--red);
       border-radius: 2px; animation: slide 1.1s ease-in-out infinite; }
     @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
 
-    /* ── Results ── */
-    #results { display: flex; flex-direction: column; gap: 0.6rem; }
+    /* ── Results ──────────────────────────────────────────────────────────── */
+    #results { display: flex; flex-direction: column; gap: .6rem; }
     .results-header { display: flex; align-items: center; justify-content: space-between; padding: 0 .1rem; }
-    .results-title { font-size: 1rem; font-weight: 700; }
-    .count-badge { background: var(--red); color: #fff; font-size: 0.72rem; font-weight: 700;
+    .results-title  { font-size: 1rem; font-weight: 700; }
+    .count-badge { background: var(--red); color: #fff; font-size: .72rem; font-weight: 700;
       padding: .2rem .55rem; border-radius: 999px; }
-
     .dish-card { background: var(--card); border-radius: 12px; box-shadow: 0 1px 6px rgba(0,0,0,.06);
-      padding: 0.9rem 1rem; border-left: 4px solid var(--red); animation: fadeUp .22s ease both; }
+      padding: .9rem 1rem; border-left: 4px solid var(--red); animation: fadeUp .22s ease both; }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-    .dish-name { font-weight: 700; font-size: 0.97rem; }
-    .dish-desc { font-size: 0.82rem; color: #555; margin-top: .28rem; line-height: 1.45; }
+    .dish-name { font-weight: 700; font-size: .97rem; }
+    .dish-desc { font-size: .82rem; color: #555; margin-top: .28rem; line-height: 1.45; }
     .dish-desc.loading { color: #bbb; font-style: italic; }
-
     .error-box { background: #fdecea; border: 1px solid #f5c6cb; color: #b71c1c;
       border-radius: 10px; padding: .85rem 1rem; font-size: .87rem; line-height: 1.5;
       white-space: pre-wrap; word-break: break-word; }
-
     details { background: var(--card); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
     summary { cursor: pointer; padding: .7rem 1rem; font-size: .78rem; color: var(--muted); user-select: none; list-style: none; }
     summary::-webkit-details-marker { display: none; }
@@ -99,47 +128,85 @@
     footer { text-align: center; padding: .6rem; font-size: .7rem; color: #ccc; }
 
     @media (min-width: 600px) {
-      header { padding: 1.1rem 1.5rem; }
-      main   { padding: 1.5rem; }
+      .app-header { padding: 1.1rem 1.5rem; }
+      main { padding: 1.5rem; }
     }
   </style>
 </head>
 <body>
-<header>
-  <div>
+
+<!-- ── Auth screen (shown when signed out) ─────────────────────────────────── -->
+<div id="auth-screen">
+  <header>
     <h1>🍛 IdliPeek</h1>
-    <p>Peek before you pick</p>
-  </div>
-</header>
+    <p>Sign in to peek before you pick</p>
+  </header>
+  <div id="sign-in-mount"></div>
+</div>
 
-<main>
-  <div class="upload-card">
-    <div id="dropZone" class="drop-zone">
-      <input id="fileGallery" type="file" accept="image/jpeg,image/png,image/webp" />
-      <div class="icon">📷</div>
-      <div class="label">Tap to choose a menu photo</div>
-      <div class="sub">JPG · PNG · WEBP · max 4 MB</div>
+<!-- ── App screen (shown when signed in) ──────────────────────────────────── -->
+<div id="app-screen">
+  <header class="app-header">
+    <div class="brand">
+      <h1>🍛 IdliPeek</h1>
+      <p>Peek before you pick</p>
     </div>
-    <div id="preview-wrap">
-      <img id="preview" alt="Menu preview" />
-      <button id="preview-clear" aria-label="Remove image">✕</button>
-    </div>
-    <div class="upload-actions">
-      <label class="btn-camera">
-        📸 Camera
-        <input id="fileCamera" type="file" accept="image/*" capture="environment" />
-      </label>
-      <button id="analyzeBtn" class="btn-analyze" disabled>🔍 Analyze</button>
-    </div>
-  </div>
+    <div id="user-button"></div>
+  </header>
 
-  <div class="progress" id="progressBar"></div>
-  <div id="statusEl"></div>
-  <div id="results"></div>
-</main>
-<footer>Powered by Gemini Vision · IdliPeek</footer>
+  <main>
+    <div class="upload-card">
+      <div id="dropZone" class="drop-zone">
+        <input id="fileGallery" type="file" accept="image/jpeg,image/png,image/webp" />
+        <div class="icon">📷</div>
+        <div class="label">Tap to choose a menu photo</div>
+        <div class="sub">JPG · PNG · WEBP · max 4 MB</div>
+      </div>
+      <div id="preview-wrap">
+        <img id="preview" alt="Menu preview" />
+        <button id="preview-clear" aria-label="Remove image">✕</button>
+      </div>
+      <div class="upload-actions">
+        <label class="btn-camera">
+          📸 Camera
+          <input id="fileCamera" type="file" accept="image/*" capture="environment" />
+        </label>
+        <button id="analyzeBtn" class="btn-analyze" disabled>🔍 Analyze</button>
+      </div>
+    </div>
+
+    <div class="progress" id="progressBar"></div>
+    <div id="statusEl"></div>
+    <div id="results"></div>
+  </main>
+  <footer>Powered by Gemini Vision · IdliPeek</footer>
+</div>
 
 <script>
+  // ── Clerk auth ────────────────────────────────────────────────────────────
+  window.addEventListener('load', async () => {
+    await window.Clerk.load();
+
+    function showApp() {
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app-screen').style.display = 'flex';
+      window.Clerk.mountUserButton(document.getElementById('user-button'));
+    }
+
+    function showAuth() {
+      document.getElementById('app-screen').style.display = 'none';
+      document.getElementById('auth-screen').style.display = 'flex';
+      window.Clerk.mountSignIn(document.getElementById('sign-in-mount'));
+    }
+
+    window.Clerk.user ? showApp() : showAuth();
+
+    window.Clerk.addListener(({ user }) => {
+      user ? showApp() : showAuth();
+    });
+  });
+
+  // ── File selection ────────────────────────────────────────────────────────
   const dropZone    = document.getElementById('dropZone');
   const fileGallery = document.getElementById('fileGallery');
   const fileCamera  = document.getElementById('fileCamera');
@@ -152,7 +219,6 @@
 
   let selectedFile = null;
 
-  // ── File selection ────────────────────────────────────────────────────────
   function setFile(file) {
     if (!file) return;
     selectedFile = file;
@@ -164,7 +230,6 @@
     setStatus(`Ready: ${file.name}`);
     resultsEl.innerHTML = '';
   }
-
   function clearFile() {
     selectedFile = null;
     preview.style.display = 'none';
@@ -180,7 +245,6 @@
   fileGallery.addEventListener('change', () => setFile(fileGallery.files[0]));
   fileCamera.addEventListener('change',  () => setFile(fileCamera.files[0]));
   previewClear.addEventListener('click',  clearFile);
-
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
   dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); setFile(e.dataTransfer.files[0]); });
@@ -188,30 +252,22 @@
   // ── Helpers ───────────────────────────────────────────────────────────────
   function setStatus(msg) { statusEl.textContent = msg; }
   function setBusy(on) { analyzeBtn.disabled = on; progressBar.classList.toggle('active', on); }
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  function esc(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  // Resize image client-side to max 1200px JPEG — dramatically reduces payload
-  // and Gemini processing time (phone photos can be 5-10 MB otherwise)
   function resizeImage(file, maxPx = 1200, quality = 0.82) {
     return new Promise((resolve) => {
       const img = new Image();
       const blobUrl = URL.createObjectURL(file);
       img.onload = () => {
         const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
-        const w = Math.round(img.width * scale);
-        const h = Math.round(img.height * scale);
         const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
         URL.revokeObjectURL(blobUrl);
-        resolve({ base64: dataUrl.split(',')[1], mimeType: 'image/jpeg' });
+        resolve({ base64: canvas.toDataURL('image/jpeg', quality).split(',')[1], mimeType: 'image/jpeg' });
       };
       img.onerror = () => {
-        // Fallback: read as-is
         const reader = new FileReader();
         reader.onload = () => resolve({ base64: reader.result.split(',')[1], mimeType: file.type });
         reader.readAsDataURL(file);
@@ -236,53 +292,6 @@
     return json;
   }
 
-  // ── Main flow ─────────────────────────────────────────────────────────────
-  analyzeBtn.addEventListener('click', async () => {
-    if (!selectedFile) return;
-    setBusy(true);
-    resultsEl.innerHTML = '';
-
-    try {
-      // ── Step 1: resize image client-side ──────────────────────────────────
-      setStatus('⏳ Preparing image…');
-      const { base64, mimeType } = await resizeImage(selectedFile);
-
-      // ── Step 2: extract dishes (vision call) ──────────────────────────────
-      setStatus('⏳ Reading menu with Gemini Vision…');
-      const { dishes, count, raw_gemini_output, model_used } = await postJSON('/analyze', {
-        image: base64, mimeType, filename: selectedFile.name,
-      });
-
-      if (!count) {
-        resultsEl.innerHTML = `<div class="error-box">No dishes found. Try a clearer photo of the menu text.</div>`;
-        setStatus('No dishes detected');
-        return;
-      }
-
-      // ── Step 3: show dishes immediately (before descriptions load) ────────
-      setStatus(`✅ Found ${count} dish${count !== 1 ? 'es' : ''} · loading descriptions…`);
-      renderDishes(dishes, {}, count);
-      resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-      // ── Step 4: fetch descriptions separately (text-only, fast) ──────────
-      let descriptions = {};
-      try {
-        const descData = await postJSON('/describe', { dishes });
-        descData.descriptions.forEach(({ dish, description }) => { descriptions[dish] = description; });
-      } catch { /* descriptions are optional — don't fail the whole flow */ }
-
-      // ── Step 5: update cards with descriptions + raw output ───────────────
-      renderDishes(dishes, descriptions, count, raw_gemini_output, model_used);
-      setStatus(`✅ ${count} dish${count !== 1 ? 'es' : ''} · ${esc(model_used || '')}`);
-
-    } catch (err) {
-      resultsEl.innerHTML = `<div class="error-box">❌ ${esc(err.message)}</div>`;
-      setStatus('Failed');
-    } finally {
-      setBusy(false);
-    }
-  });
-
   function renderDishes(dishes, descriptions, count, rawOutput, modelUsed) {
     const cards = dishes.map((dish, i) => {
       const desc = descriptions[dish];
@@ -294,19 +303,56 @@
           </div>
         </div>`;
     }).join('');
-
     const raw = rawOutput
       ? `<details><summary>▸ Raw Gemini output</summary><pre>${esc(rawOutput)}</pre></details>`
       : '';
-
     resultsEl.innerHTML = `
       <div class="results-header">
         <span class="results-title">Dishes found</span>
         <span class="count-badge">${count}</span>
-      </div>
-      ${cards}
-      ${raw}`;
+      </div>${cards}${raw}`;
   }
+
+  // ── Analyze ───────────────────────────────────────────────────────────────
+  analyzeBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+    setBusy(true);
+    resultsEl.innerHTML = '';
+
+    try {
+      setStatus('⏳ Preparing image…');
+      const { base64, mimeType } = await resizeImage(selectedFile);
+
+      setStatus('⏳ Reading menu with Gemini Vision…');
+      const { dishes, count, raw_gemini_output, model_used } = await postJSON('/analyze', {
+        image: base64, mimeType, filename: selectedFile.name,
+      });
+
+      if (!count) {
+        resultsEl.innerHTML = `<div class="error-box">No dishes found. Try a clearer photo of the menu text.</div>`;
+        setStatus('No dishes detected');
+        return;
+      }
+
+      setStatus(`✅ Found ${count} dish${count !== 1 ? 'es' : ''} · loading descriptions…`);
+      renderDishes(dishes, {}, count);
+      resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      let descriptions = {};
+      try {
+        const { descriptions: arr } = await postJSON('/describe', { dishes });
+        arr.forEach(({ dish, description }) => { descriptions[dish] = description; });
+      } catch { /* descriptions are optional */ }
+
+      renderDishes(dishes, descriptions, count, raw_gemini_output, model_used);
+      setStatus(`✅ ${count} dish${count !== 1 ? 'es' : ''} · ${esc(model_used || '')}`);
+    } catch (err) {
+      resultsEl.innerHTML = `<div class="error-box">❌ ${esc(err.message)}</div>`;
+      setStatus('Failed');
+    } finally {
+      setBusy(false);
+    }
+  });
 </script>
 </body>
 </html>
