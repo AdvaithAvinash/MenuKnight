@@ -9,10 +9,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>IdliPeek — Peek before you pick</title>
 
-  <!-- Clerk JS — loaded from Clerk's CDN (derived from publishable key) -->
+  <!-- Clerk JS -->
   <script
-    async
-    crossorigin="anonymous"
     data-clerk-publishable-key="pk_test_Z2FtZS1saW9uLTUyLmNsZXJrLmFjY291bnRzLmRldiQ"
     src="https://game-lion-52.clerk.accounts.dev/.well-known/clerk.browser.js"
     type="text/javascript"
@@ -184,27 +182,41 @@
 
 <script>
   // ── Clerk auth ────────────────────────────────────────────────────────────
-  window.addEventListener('load', async () => {
-    await window.Clerk.load();
+  (async () => {
+    const authScreen = document.getElementById('auth-screen');
+    const appScreen  = document.getElementById('app-screen');
+    const signInMount = document.getElementById('sign-in-mount');
+    const userButton  = document.getElementById('user-button');
 
     function showApp() {
-      document.getElementById('auth-screen').style.display = 'none';
-      document.getElementById('app-screen').style.display = 'flex';
-      window.Clerk.mountUserButton(document.getElementById('user-button'));
+      authScreen.style.display = 'none';
+      appScreen.style.display  = 'flex';
+      if (window.Clerk) window.Clerk.mountUserButton(userButton);
+    }
+    function showAuth() {
+      appScreen.style.display  = 'none';
+      authScreen.style.display = 'flex';
+      if (window.Clerk) window.Clerk.mountSignIn(signInMount);
     }
 
-    function showAuth() {
-      document.getElementById('app-screen').style.display = 'none';
-      document.getElementById('auth-screen').style.display = 'flex';
-      window.Clerk.mountSignIn(document.getElementById('sign-in-mount'));
+    if (!window.Clerk) {
+      // Clerk script failed to load — skip auth, show app directly
+      console.warn('Clerk not available; skipping auth gate');
+      showApp();
+      return;
+    }
+
+    try {
+      await window.Clerk.load();
+    } catch (e) {
+      console.error('Clerk load failed:', e);
+      showApp();
+      return;
     }
 
     window.Clerk.user ? showApp() : showAuth();
-
-    window.Clerk.addListener(({ user }) => {
-      user ? showApp() : showAuth();
-    });
-  });
+    window.Clerk.addListener(({ user }) => { user ? showApp() : showAuth(); });
+  })();
 
   // ── File selection ────────────────────────────────────────────────────────
   const dropZone    = document.getElementById('dropZone');
