@@ -9,13 +9,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>IdliPeek — Peek before you pick</title>
 
-  <!-- Clerk JS -->
-  <script
-    data-clerk-publishable-key="pk_test_Z2FtZS1saW9uLTUyLmNsZXJrLmFjY291bnRzLmRldiQ"
-    src="https://game-lion-52.clerk.accounts.dev/.well-known/clerk.browser.js"
-    type="text/javascript"
-  ></script>
-
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -28,37 +21,15 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
 
-    /* ── Auth screen ──────────────────────────────────────────────────────── */
-    #auth-screen {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; min-height: 100dvh; padding: 1.5rem;
-      background: var(--bg); gap: 1.5rem;
-    }
-    #auth-screen header {
-      text-align: center;
-    }
-    #auth-screen header h1 { font-size: 2rem; font-weight: 800; color: var(--red); }
-    #auth-screen header p  { color: var(--muted); margin-top: .3rem; font-size: .95rem; }
+    /* ── App layout ───────────────────────────────────────────────────────── */
+    body { display: flex; flex-direction: column; min-height: 100dvh; padding-bottom: var(--safe-b); }
 
-    /* ── App screen ───────────────────────────────────────────────────────── */
-    #app-screen {
-      display: none; flex-direction: column;
-      min-height: 100dvh; padding-bottom: var(--safe-b);
-    }
+    header { background: var(--red); color: #fff; padding: 1rem 1.25rem 0.85rem;
+      display: flex; align-items: center; gap: .6rem;
+      position: sticky; top: 0; z-index: 10; }
+    header h1 { font-size: 1.3rem; font-weight: 800; }
+    header p  { font-size: .77rem; opacity: .85; }
 
-    /* ── Shared header ────────────────────────────────────────────────────── */
-    .app-header {
-      background: var(--red); color: #fff; padding: 1rem 1.25rem 0.85rem;
-      display: flex; align-items: center; justify-content: space-between;
-      position: sticky; top: 0; z-index: 10;
-    }
-    .app-header .brand h1 { font-size: 1.3rem; font-weight: 800; }
-    .app-header .brand p  { font-size: .77rem; opacity: .85; }
-
-    /* Clerk UserButton container */
-    #user-button { display: flex; align-items: center; }
-
-    /* ── Main scroll area ─────────────────────────────────────────────────── */
     main { flex: 1; overflow-y: auto; padding: 1rem; display: flex;
       flex-direction: column; gap: .9rem; max-width: 600px; width: 100%; margin: 0 auto; }
 
@@ -126,98 +97,48 @@
     footer { text-align: center; padding: .6rem; font-size: .7rem; color: #ccc; }
 
     @media (min-width: 600px) {
-      .app-header { padding: 1.1rem 1.5rem; }
-      main { padding: 1.5rem; }
+      header { padding: 1.1rem 1.5rem; }
+      main   { padding: 1.5rem; }
     }
   </style>
 </head>
 <body>
 
-<!-- ── Auth screen (shown when signed out) ─────────────────────────────────── -->
-<div id="auth-screen">
-  <header>
+<header>
+  <div>
     <h1>🍛 IdliPeek</h1>
-    <p>Sign in to peek before you pick</p>
-  </header>
-  <div id="sign-in-mount"></div>
-</div>
+    <p>Peek before you pick</p>
+  </div>
+</header>
 
-<!-- ── App screen (shown when signed in) ──────────────────────────────────── -->
-<div id="app-screen">
-  <header class="app-header">
-    <div class="brand">
-      <h1>🍛 IdliPeek</h1>
-      <p>Peek before you pick</p>
+<main>
+  <div class="upload-card">
+    <div id="dropZone" class="drop-zone">
+      <input id="fileGallery" type="file" accept="image/jpeg,image/png,image/webp" />
+      <div class="icon">📷</div>
+      <div class="label">Tap to choose a menu photo</div>
+      <div class="sub">JPG · PNG · WEBP · max 4 MB</div>
     </div>
-    <div id="user-button"></div>
-  </header>
-
-  <main>
-    <div class="upload-card">
-      <div id="dropZone" class="drop-zone">
-        <input id="fileGallery" type="file" accept="image/jpeg,image/png,image/webp" />
-        <div class="icon">📷</div>
-        <div class="label">Tap to choose a menu photo</div>
-        <div class="sub">JPG · PNG · WEBP · max 4 MB</div>
-      </div>
-      <div id="preview-wrap">
-        <img id="preview" alt="Menu preview" />
-        <button id="preview-clear" aria-label="Remove image">✕</button>
-      </div>
-      <div class="upload-actions">
-        <label class="btn-camera">
-          📸 Camera
-          <input id="fileCamera" type="file" accept="image/*" capture="environment" />
-        </label>
-        <button id="analyzeBtn" class="btn-analyze" disabled>🔍 Analyze</button>
-      </div>
+    <div id="preview-wrap">
+      <img id="preview" alt="Menu preview" />
+      <button id="preview-clear" aria-label="Remove image">✕</button>
     </div>
+    <div class="upload-actions">
+      <label class="btn-camera">
+        📸 Camera
+        <input id="fileCamera" type="file" accept="image/*" capture="environment" />
+      </label>
+      <button id="analyzeBtn" class="btn-analyze" disabled>🔍 Analyze</button>
+    </div>
+  </div>
 
-    <div class="progress" id="progressBar"></div>
-    <div id="statusEl"></div>
-    <div id="results"></div>
-  </main>
-  <footer>Powered by Gemini Vision · IdliPeek</footer>
-</div>
+  <div class="progress" id="progressBar"></div>
+  <div id="statusEl"></div>
+  <div id="results"></div>
+</main>
+<footer>Powered by Gemini Vision · IdliPeek</footer>
 
 <script>
-  // ── Clerk auth ────────────────────────────────────────────────────────────
-  (async () => {
-    const authScreen = document.getElementById('auth-screen');
-    const appScreen  = document.getElementById('app-screen');
-    const signInMount = document.getElementById('sign-in-mount');
-    const userButton  = document.getElementById('user-button');
-
-    function showApp() {
-      authScreen.style.display = 'none';
-      appScreen.style.display  = 'flex';
-      if (window.Clerk) window.Clerk.mountUserButton(userButton);
-    }
-    function showAuth() {
-      appScreen.style.display  = 'none';
-      authScreen.style.display = 'flex';
-      if (window.Clerk) window.Clerk.mountSignIn(signInMount);
-    }
-
-    if (!window.Clerk) {
-      // Clerk script failed to load — skip auth, show app directly
-      console.warn('Clerk not available; skipping auth gate');
-      showApp();
-      return;
-    }
-
-    try {
-      await window.Clerk.load();
-    } catch (e) {
-      console.error('Clerk load failed:', e);
-      showApp();
-      return;
-    }
-
-    window.Clerk.user ? showApp() : showAuth();
-    window.Clerk.addListener(({ user }) => { user ? showApp() : showAuth(); });
-  })();
-
   // ── File selection ────────────────────────────────────────────────────────
   const dropZone    = document.getElementById('dropZone');
   const fileGallery = document.getElementById('fileGallery');
