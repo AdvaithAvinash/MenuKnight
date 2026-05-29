@@ -9,7 +9,7 @@
   force = true
 
 [[redirects]]
-  from = "/health"
-  to = "/.netlify/functions/analyze"
+  from = "/describe"
+  to = "/.netlify/functions/describe"
   status = 200
   force = true
