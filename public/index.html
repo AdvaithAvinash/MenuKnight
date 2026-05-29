@@ -3,219 +3,446 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#1a1f3c" />
+  <meta name="theme-color" content="#0f1224" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>MenuKnight — Know before you order</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --navy: #1a1f3c; --navy-dark: #0f1224;
-      --gold: #c9a84c; --gold-light: #f0d080;
-      --bg: #f5f4f0; --card: #fff; --border: #e2ddd4;
-      --text: #1a1a1a; --muted: #888;
-      --safe-b: env(safe-area-inset-bottom, 0px);
+      --navy:       #0f1224;
+      --navy-mid:   #1a2040;
+      --navy-light: #252d52;
+      --gold:       #c9a84c;
+      --gold-light: #e8c96a;
+      --gold-dim:   #7a6328;
+      --bg:         #f8f7f4;
+      --surface:    #ffffff;
+      --surface-2:  #f2f1ee;
+      --border:     #e5e2db;
+      --text:       #111827;
+      --text-2:     #4b5563;
+      --text-3:     #9ca3af;
+      --red-soft:   #fef2f2;
+      --red-border: #fecaca;
+      --red-text:   #991b1b;
+      --safe-b:     env(safe-area-inset-bottom, 0px);
+      --safe-t:     env(safe-area-inset-top, 0px);
+      --radius:     16px;
+      --radius-sm:  10px;
+      --shadow:     0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+      --shadow-lg:  0 8px 32px rgba(0,0,0,.12), 0 2px 8px rgba(0,0,0,.06);
     }
-    html, body {
-      height: 100%; background: var(--bg); color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      -webkit-tap-highlight-color: transparent; overscroll-behavior: none;
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg); color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+      min-height: 100dvh;
+      display: flex; flex-direction: column;
+      padding-bottom: var(--safe-b);
     }
-    body { display: flex; flex-direction: column; min-height: 100dvh; padding-bottom: var(--safe-b); }
 
     /* ── Header ───────────────────────────────────────────────────────────── */
     header {
-      background: var(--navy); color: #fff;
-      padding: 1rem 1.25rem 0.85rem;
-      display: flex; align-items: center; gap: .75rem;
-      position: sticky; top: 0; z-index: 10;
-      border-bottom: 2px solid var(--gold);
+      background: var(--navy);
+      padding: calc(var(--safe-t) + .85rem) 1.25rem .85rem;
+      display: flex; align-items: center; gap: .875rem;
+      position: sticky; top: 0; z-index: 100;
+      border-bottom: 1px solid rgba(201,168,76,.25);
     }
-    .knight-logo {
-      width: 42px; height: 42px; background: var(--gold);
-      border-radius: 10px; display: flex; align-items: center;
-      justify-content: center; font-size: 1.5rem; flex-shrink: 0;
+    .logo-wrap {
+      width: 44px; height: 44px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+      border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.45rem; box-shadow: 0 2px 8px rgba(201,168,76,.4);
       transform: scaleX(-1);
     }
-    .brand h1 { font-size: 1.25rem; font-weight: 800; letter-spacing: -.01em; }
-    .brand p  { font-size: .73rem; opacity: .7; margin-top: 1px; }
+    .brand-text { flex: 1; min-width: 0; }
+    .brand-text h1 {
+      font-size: 1.2rem; font-weight: 800; color: #fff;
+      letter-spacing: -.02em; line-height: 1.1;
+    }
+    .brand-text p { font-size: .72rem; color: rgba(255,255,255,.5); margin-top: 2px; font-weight: 500; }
+    .header-pill {
+      background: rgba(201,168,76,.15); border: 1px solid rgba(201,168,76,.3);
+      color: var(--gold-light); font-size: .65rem; font-weight: 700;
+      padding: .25rem .6rem; border-radius: 999px; letter-spacing: .06em;
+      text-transform: uppercase; white-space: nowrap;
+    }
 
-    /* ── Main ─────────────────────────────────────────────────────────────── */
-    main { flex: 1; overflow-y: auto; padding: 1rem; display: flex;
-      flex-direction: column; gap: .9rem; max-width: 600px; width: 100%; margin: 0 auto; }
+    /* ── Main scroll area ─────────────────────────────────────────────────── */
+    main {
+      flex: 1; overflow-y: auto;
+      padding: 1.25rem 1rem 1.5rem;
+      display: flex; flex-direction: column; gap: 1rem;
+      max-width: 560px; width: 100%; margin: 0 auto;
+    }
+
+    /* ── Section label ────────────────────────────────────────────────────── */
+    .section-label {
+      font-size: .7rem; font-weight: 700; color: var(--text-3);
+      text-transform: uppercase; letter-spacing: .08em;
+      margin-bottom: -.25rem;
+    }
 
     /* ── Upload card ──────────────────────────────────────────────────────── */
-    .upload-card { background: var(--card); border-radius: 16px;
-      box-shadow: 0 2px 12px rgba(0,0,0,.08); overflow: hidden;
-      border: 1px solid var(--border); }
+    .upload-card {
+      background: var(--surface); border-radius: var(--radius);
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+      overflow: hidden;
+    }
 
-    .drop-zone { position: relative; padding: 2rem 1rem; text-align: center; cursor: pointer;
-      border: 2px dashed var(--border); border-radius: 14px; margin: .75rem;
-      min-height: 130px; display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: .45rem; transition: border-color .2s, background .2s; }
-    .drop-zone.drag-over { border-color: var(--gold); background: #faf7ee; }
-    .drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-    .drop-zone .icon  { font-size: 2rem; }
-    .drop-zone .label { font-weight: 700; font-size: .97rem; color: #333; }
-    .drop-zone .sub   { font-size: .78rem; color: var(--muted); }
+    /* Drop zone */
+    .drop-zone {
+      position: relative; padding: 2rem 1.25rem 1.75rem;
+      text-align: center; cursor: pointer;
+      border: 2px dashed var(--border); border-radius: 12px; margin: .875rem;
+      min-height: 140px;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: .5rem;
+      transition: border-color .2s, background .2s;
+      background: var(--surface-2);
+    }
+    .drop-zone.drag-over { border-color: var(--gold); background: #faf8f0; }
+    .drop-zone input {
+      position: absolute; inset: 0; opacity: 0;
+      cursor: pointer; width: 100%; height: 100%;
+    }
+    .dz-icon {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      border-radius: 14px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; box-shadow: 0 4px 12px rgba(15,18,36,.18);
+      margin-bottom: .25rem;
+    }
+    .dz-title { font-weight: 700; font-size: .95rem; color: var(--text); }
+    .dz-sub   { font-size: .75rem; color: var(--text-3); font-weight: 500; }
 
+    /* Preview */
     #preview-wrap { position: relative; }
-    #preview { width: 100%; max-height: 240px; object-fit: cover; display: none; }
-    #preview-clear { display: none; position: absolute; top: .5rem; right: .5rem;
-      background: rgba(0,0,0,.5); color: #fff; border: none; border-radius: 50%;
-      width: 32px; height: 32px; font-size: 1rem; cursor: pointer; }
+    #preview { width: 100%; max-height: 260px; object-fit: cover; display: none; }
+    #preview-clear {
+      display: none; position: absolute; top: .6rem; right: .6rem;
+      background: rgba(0,0,0,.6); color: #fff; border: none; border-radius: 50%;
+      width: 34px; height: 34px; font-size: .9rem; cursor: pointer;
+      backdrop-filter: blur(4px); font-weight: 700;
+    }
+    #file-info {
+      display: none; padding: .5rem .875rem .25rem;
+      font-size: .74rem; color: var(--text-3); font-weight: 500;
+      display: none; align-items: center; gap: .35rem;
+    }
+    #file-info.show { display: flex; }
+    #file-info::before { content: '📄'; font-size: .8rem; }
 
-    /* ── Model selector ───────────────────────────────────────────────────── */
+    /* Divider */
+    .card-divider { height: 1px; background: var(--border); margin: 0 .875rem; }
+
+    /* Model selector */
     .model-row {
+      padding: .75rem .875rem .5rem;
       display: flex; align-items: center; gap: .6rem;
-      padding: .5rem .75rem .25rem;
     }
-    .model-label { font-size: .75rem; font-weight: 700; color: var(--muted);
-      white-space: nowrap; text-transform: uppercase; letter-spacing: .04em; }
+    .model-label {
+      font-size: .7rem; font-weight: 700; color: var(--text-3);
+      text-transform: uppercase; letter-spacing: .07em; white-space: nowrap;
+    }
+    .model-select-wrap { flex: 1; position: relative; }
     .model-select {
-      flex: 1; padding: .55rem .75rem; border: 1.5px solid var(--border);
-      border-radius: 9px; background: var(--bg); color: var(--text);
-      font-size: .85rem; font-weight: 600; appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right .75rem center;
-      padding-right: 2.2rem; cursor: pointer;
+      width: 100%;
+      padding: .6rem .875rem; padding-right: 2.4rem;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--surface-2); color: var(--text);
+      font-size: .85rem; font-weight: 600; font-family: inherit;
+      appearance: none; cursor: pointer;
+      transition: border-color .15s, box-shadow .15s;
     }
-    .model-select:focus { outline: none; border-color: var(--navy); }
+    .model-select:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(15,18,36,.08); }
+    .model-select-wrap::after {
+      content: '';
+      position: absolute; right: .8rem; top: 50%; transform: translateY(-50%);
+      width: 0; height: 0;
+      border-left: 4px solid transparent; border-right: 4px solid transparent;
+      border-top: 5px solid var(--text-3);
+      pointer-events: none;
+    }
     .model-badge {
-      font-size: .68rem; font-weight: 700; padding: .15rem .45rem;
-      border-radius: 999px; white-space: nowrap;
+      font-size: .68rem; font-weight: 700; padding: .2rem .55rem;
+      border-radius: 999px; white-space: nowrap; letter-spacing: .02em;
     }
-    .badge-google { background: #e8f0fe; color: #1a73e8; }
-    .badge-nvidia { background: #e6f4ea; color: #137333; }
-    .badge-groq   { background: #fff3e0; color: #e65100; }
+    .badge-google { background: #dbeafe; color: #1d4ed8; }
+    .badge-nvidia { background: #dcfce7; color: #15803d; }
+    .badge-groq   { background: #fff7ed; color: #c2410c; }
 
-    .upload-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; padding: .6rem .75rem .75rem; }
-    .btn-camera { display: flex; align-items: center; justify-content: center; gap: .4rem;
-      padding: .85rem; background: var(--card); border: 2px solid var(--border); border-radius: 10px;
-      font-size: .9rem; font-weight: 600; color: #444; cursor: pointer; position: relative;
-      transition: border-color .15s; min-height: 48px; }
-    .btn-camera:active { border-color: var(--navy); background: #f0f1f8; }
-    .btn-camera input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-    .btn-analyze { display: flex; align-items: center; justify-content: center; gap: .4rem;
-      padding: .85rem; background: var(--navy); color: #fff; border: none; border-radius: 10px;
-      font-size: .9rem; font-weight: 700; cursor: pointer; transition: background .15s, opacity .2s; min-height: 48px; }
-    .btn-analyze:disabled { opacity: .4; cursor: not-allowed; }
-    .btn-analyze:not(:disabled):active { background: var(--navy-dark); }
+    /* Action buttons */
+    .upload-actions {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: .625rem; padding: .625rem .875rem .875rem;
+    }
+    .btn-camera {
+      display: flex; align-items: center; justify-content: center; gap: .45rem;
+      padding: .875rem; background: var(--surface-2);
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: .88rem; font-weight: 600; color: var(--text-2);
+      cursor: pointer; position: relative;
+      transition: border-color .15s, background .15s; min-height: 52px;
+      font-family: inherit;
+    }
+    .btn-camera:active { border-color: var(--navy); background: #eef0f8; }
+    .btn-camera input {
+      position: absolute; inset: 0; opacity: 0;
+      cursor: pointer; width: 100%; height: 100%;
+    }
+    .btn-analyze {
+      display: flex; align-items: center; justify-content: center; gap: .45rem;
+      padding: .875rem;
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      color: #fff; border: none; border-radius: var(--radius-sm);
+      font-size: .88rem; font-weight: 700; cursor: pointer;
+      transition: opacity .15s, transform .1s; min-height: 52px;
+      font-family: inherit; letter-spacing: .01em;
+      box-shadow: 0 2px 8px rgba(15,18,36,.25);
+    }
+    .btn-analyze:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+    .btn-analyze:not(:disabled):active { transform: scale(.98); opacity: .9; }
+    .btn-icon { font-size: 1rem; }
 
-    /* ── Progress / status ────────────────────────────────────────────────── */
-    #statusEl { text-align: center; font-size: .84rem; color: var(--muted); min-height: 1.1em; padding: 0 .25rem; }
-    .progress { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; display: none; }
-    .progress.active { display: block; }
-    .progress::after { content: ''; display: block; height: 100%; width: 40%; background: var(--gold);
-      border-radius: 2px; animation: slide 1.1s ease-in-out infinite; }
-    @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
+    /* ── Progress bar ─────────────────────────────────────────────────────── */
+    .progress-wrap { display: none; flex-direction: column; gap: .5rem; }
+    .progress-wrap.active { display: flex; }
+    .progress-track {
+      height: 3px; background: var(--border); border-radius: 99px; overflow: hidden;
+    }
+    .progress-track::after {
+      content: ''; display: block; height: 100%; width: 35%;
+      background: linear-gradient(90deg, var(--navy) 0%, var(--gold) 100%);
+      border-radius: 99px;
+      animation: progress-slide 1.4s cubic-bezier(.4,0,.6,1) infinite;
+    }
+    @keyframes progress-slide {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(400%); }
+    }
+    #statusEl {
+      font-size: .8rem; color: var(--text-3); font-weight: 500;
+      min-height: 1.1em; text-align: center;
+    }
 
     /* ── Results ──────────────────────────────────────────────────────────── */
-    #results { display: flex; flex-direction: column; gap: .6rem; }
-    .results-header { display: flex; align-items: center; justify-content: space-between; padding: 0 .1rem; }
-    .results-title  { font-size: 1rem; font-weight: 700; }
-    .count-badge { background: var(--navy); color: #fff; font-size: .72rem; font-weight: 700;
-      padding: .2rem .55rem; border-radius: 999px; }
-    .dish-card { background: var(--card); border-radius: 12px; box-shadow: 0 1px 6px rgba(0,0,0,.06);
-      padding: .9rem 1rem; border-left: 4px solid var(--gold); animation: fadeUp .22s ease both;
-      border: 1px solid var(--border); border-left: 4px solid var(--gold); }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-    .dish-name { font-weight: 700; font-size: .97rem; }
-    .dish-desc { font-size: .82rem; color: #555; margin-top: .28rem; line-height: 1.45; }
-    .dish-desc.loading { color: #bbb; font-style: italic; }
-    .error-box { background: #fdecea; border: 1px solid #f5c6cb; color: #b71c1c;
-      border-radius: 10px; padding: .85rem 1rem; font-size: .87rem; line-height: 1.5;
-      white-space: pre-wrap; word-break: break-word; }
-    details { background: var(--card); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.05);
-      border: 1px solid var(--border); }
-    summary { cursor: pointer; padding: .7rem 1rem; font-size: .78rem; color: var(--muted); user-select: none; list-style: none; }
+    #results { display: flex; flex-direction: column; gap: .625rem; }
+
+    .results-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 .125rem;
+    }
+    .results-title { font-size: 1rem; font-weight: 800; color: var(--text); }
+    .count-badge {
+      background: var(--navy); color: #fff;
+      font-size: .7rem; font-weight: 700;
+      padding: .2rem .6rem; border-radius: 999px;
+    }
+
+    .dish-card {
+      background: var(--surface); border-radius: var(--radius);
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+      padding: .875rem 1rem .875rem 1.1rem;
+      position: relative; overflow: hidden;
+      animation: card-in .25s cubic-bezier(.22,1,.36,1) both;
+    }
+    .dish-card::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--gold) 0%, var(--gold-dim) 100%);
+    }
+    @keyframes card-in {
+      from { opacity: 0; transform: translateY(10px) scale(.98); }
+      to   { opacity: 1; transform: none; }
+    }
+    .dish-name {
+      font-weight: 700; font-size: .95rem; color: var(--text);
+      letter-spacing: -.01em; line-height: 1.3;
+    }
+    .dish-desc {
+      font-size: .8rem; color: var(--text-2); margin-top: .35rem;
+      line-height: 1.55; font-weight: 400;
+    }
+    .dish-desc.loading {
+      color: var(--text-3); font-style: italic;
+      display: flex; align-items: center; gap: .4rem;
+    }
+    .dish-desc.loading::before {
+      content: '';
+      width: 10px; height: 10px; border-radius: 50%;
+      border: 2px solid var(--border);
+      border-top-color: var(--gold);
+      animation: spin .8s linear infinite; flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error box */
+    .error-box {
+      background: var(--red-soft); border: 1px solid var(--red-border);
+      color: var(--red-text); border-radius: var(--radius);
+      padding: 1rem 1.125rem; font-size: .85rem; line-height: 1.55;
+      white-space: pre-wrap; word-break: break-word; font-weight: 500;
+    }
+    .error-box strong { display: block; margin-bottom: .35rem; font-size: .9rem; }
+
+    /* Raw output details */
+    details {
+      background: var(--surface); border-radius: var(--radius);
+      border: 1px solid var(--border); overflow: hidden;
+    }
+    summary {
+      cursor: pointer; padding: .75rem 1rem;
+      font-size: .75rem; color: var(--text-3); font-weight: 600;
+      user-select: none; list-style: none;
+      display: flex; align-items: center; gap: .4rem;
+    }
     summary::-webkit-details-marker { display: none; }
-    pre { padding: 0 1rem .75rem; font-size: .74rem; white-space: pre-wrap; word-break: break-word;
-      max-height: 180px; overflow-y: auto; color: #555; }
+    summary::before { content: '▸'; font-size: .7rem; transition: transform .15s; }
+    details[open] summary::before { transform: rotate(90deg); }
+    pre {
+      padding: 0 1rem .875rem;
+      font-size: .72rem; white-space: pre-wrap; word-break: break-word;
+      max-height: 200px; overflow-y: auto; color: var(--text-2);
+      border-top: 1px solid var(--border);
+      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+      line-height: 1.6;
+    }
 
-    footer { text-align: center; padding: .6rem; font-size: .7rem; color: #bbb; }
+    /* ── Footer ───────────────────────────────────────────────────────────── */
+    footer {
+      text-align: center; padding: 1rem .75rem;
+      font-size: .68rem; color: var(--text-3); font-weight: 500;
+      border-top: 1px solid var(--border);
+    }
+    footer span { opacity: .6; }
 
-    @media (min-width: 600px) {
-      header { padding: 1.1rem 1.5rem; }
-      main   { padding: 1.5rem; }
+    /* ── Responsive ───────────────────────────────────────────────────────── */
+    @media (min-width: 540px) {
+      main { padding: 1.5rem 1.25rem 2rem; }
+      .upload-card { border-radius: 20px; }
+      .dish-card { border-radius: 14px; }
     }
   </style>
 </head>
 <body>
 
+<!-- Header -->
 <header>
-  <div class="knight-logo">♞</div>
-  <div class="brand">
+  <div class="logo-wrap">♞</div>
+  <div class="brand-text">
     <h1>MenuKnight</h1>
     <p>Know before you order</p>
   </div>
+  <div class="header-pill">AI Vision</div>
 </header>
 
+<!-- Main content -->
 <main>
+
+  <!-- Upload card -->
   <div class="upload-card">
+
+    <!-- Drop zone -->
     <div id="dropZone" class="drop-zone">
       <input id="fileGallery" type="file" accept="image/jpeg,image/png,image/webp" />
-      <div class="icon">📷</div>
-      <div class="label">Tap to choose a menu photo</div>
-      <div class="sub">JPG · PNG · WEBP · max 4 MB</div>
+      <div class="dz-icon">📷</div>
+      <div class="dz-title">Upload a menu photo</div>
+      <div class="dz-sub">Tap to browse · JPG · PNG · WEBP · max 4 MB</div>
     </div>
+
+    <!-- Preview -->
     <div id="preview-wrap">
       <img id="preview" alt="Menu preview" />
       <button id="preview-clear" aria-label="Remove image">✕</button>
     </div>
+    <div id="file-info"></div>
 
+    <div class="card-divider"></div>
+
+    <!-- Model selector -->
     <div class="model-row">
-      <span class="model-label">Vision AI</span>
-      <select id="modelSelect" class="model-select">
-        <option value="gemini">⚔️ KnightXtremeVision</option>
-        <option value="nvidia">🛡️ KnightHonorVision</option>
-        <option value="groq">🧙 WizardKnight</option>
-      </select>
+      <span class="model-label">Model</span>
+      <div class="model-select-wrap">
+        <select id="modelSelect" class="model-select">
+          <option value="gemini">⚔️ KnightXtremeVision</option>
+          <option value="nvidia">🛡️ KnightHonorVision</option>
+          <option value="groq">🧙 WizardKnight</option>
+        </select>
+      </div>
       <span id="modelBadge" class="model-badge badge-google">Google</span>
     </div>
 
+    <!-- Action buttons -->
     <div class="upload-actions">
       <label class="btn-camera">
-        📸 Camera
+        <span class="btn-icon">📸</span> Camera
         <input id="fileCamera" type="file" accept="image/*" capture="environment" />
       </label>
-      <button id="analyzeBtn" class="btn-analyze" disabled>♞ Analyze</button>
+      <button id="analyzeBtn" class="btn-analyze" disabled>
+        <span class="btn-icon">♞</span> Analyze
+      </button>
     </div>
+
+  </div><!-- /.upload-card -->
+
+  <!-- Progress + status -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-track"></div>
+    <div id="statusEl"></div>
   </div>
 
-  <div class="progress" id="progressBar"></div>
-  <div id="statusEl"></div>
+  <!-- Results -->
   <div id="results"></div>
+
 </main>
-<footer>Powered by Gemini · NVIDIA NIM · Groq · MenuKnight</footer>
+
+<footer>
+  Powered by <span>Gemini · NVIDIA NIM · Groq · </span>MenuKnight
+</footer>
 
 <script>
-  // ── File selection ────────────────────────────────────────────────────────
+  // ── DOM refs ──────────────────────────────────────────────────────────────
   const dropZone    = document.getElementById('dropZone');
   const fileGallery = document.getElementById('fileGallery');
   const fileCamera  = document.getElementById('fileCamera');
   const preview     = document.getElementById('preview');
   const previewClear= document.getElementById('preview-clear');
+  const fileInfo    = document.getElementById('file-info');
   const analyzeBtn  = document.getElementById('analyzeBtn');
   const statusEl    = document.getElementById('statusEl');
   const resultsEl   = document.getElementById('results');
-  const progressBar = document.getElementById('progressBar');
+  const progressWrap= document.getElementById('progressWrap');
   const modelSelect = document.getElementById('modelSelect');
   const modelBadge  = document.getElementById('modelBadge');
 
   let selectedFile = null;
 
-  // Update badge when model changes
-  modelSelect.addEventListener('change', () => {
-    const v = modelSelect.value;
-    const labels = { gemini: ['Google', 'badge-google'], nvidia: ['NVIDIA', 'badge-nvidia'], groq: ['Groq', 'badge-groq'] };
-    const [label, cls] = labels[v] || labels.gemini;
+  // ── Model badge ───────────────────────────────────────────────────────────
+  const BADGE_MAP = {
+    gemini: ['Google', 'badge-google'],
+    nvidia: ['NVIDIA', 'badge-nvidia'],
+    groq:   ['Groq',   'badge-groq'],
+  };
+  modelSelect.addEventListener('change', updateBadge);
+  function updateBadge() {
+    const [label, cls] = BADGE_MAP[modelSelect.value] || BADGE_MAP.gemini;
     modelBadge.textContent = label;
     modelBadge.className   = 'model-badge ' + cls;
-  });
+  }
 
+  // ── File handling ─────────────────────────────────────────────────────────
   function setFile(file) {
     if (!file) return;
     selectedFile = file;
@@ -223,8 +450,10 @@
     preview.style.display = 'block';
     previewClear.style.display = 'block';
     dropZone.style.display = 'none';
+    fileInfo.textContent = `${file.name}  ·  ${(file.size / 1024).toFixed(0)} KB`;
+    fileInfo.classList.add('show');
     analyzeBtn.disabled = false;
-    setStatus(`Ready: ${file.name}`);
+    setStatus('');
     resultsEl.innerHTML = '';
   }
   function clearFile() {
@@ -232,11 +461,12 @@
     preview.style.display = 'none';
     previewClear.style.display = 'none';
     dropZone.style.display = 'flex';
+    fileInfo.classList.remove('show');
     analyzeBtn.disabled = true;
     setStatus('');
     resultsEl.innerHTML = '';
     fileGallery.value = '';
-    fileCamera.value = '';
+    fileCamera.value  = '';
   }
 
   fileGallery.addEventListener('change', () => setFile(fileGallery.files[0]));
@@ -244,16 +474,25 @@
   previewClear.addEventListener('click',  clearFile);
   dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-  dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); setFile(e.dataTransfer.files[0]); });
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    setFile(e.dataTransfer.files[0]);
+  });
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   function setStatus(msg) { statusEl.textContent = msg; }
-  function setBusy(on) { analyzeBtn.disabled = on || !selectedFile; progressBar.classList.toggle('active', on); }
-  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function setBusy(on) {
+    analyzeBtn.disabled = on || !selectedFile;
+    progressWrap.classList.toggle('active', on);
+  }
+  function esc(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 
-  // maxPx/quality tuned per provider:
-  //   gemini/groq → 900px/0.72  (~80-120KB base64, fast upload)
-  //   nvidia      → 600px/0.65  (<80KB, within NVIDIA NIM's inline-base64 limit)
+  // Resize: smaller = faster upload = more headroom for Netlify's 10s budget
+  // NVIDIA gets an extra-small image to stay within their base64 inline limit
   function resizeImage(file, maxPx = 900, quality = 0.72) {
     return new Promise((resolve) => {
       const fallback = () => {
@@ -293,44 +532,42 @@
     const ct = res.headers.get('content-type') || '';
     if (!ct.includes('application/json')) {
       const txt = await res.text();
-      throw new Error(`HTTP ${res.status} — check Netlify function logs.\n${txt.slice(0, 300)}`);
+      throw new Error(`HTTP ${res.status}\n${txt.slice(0, 300)}`);
     }
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
     return json;
   }
 
-  // Phase 1: render dish cards with loading spinner for descriptions
+  // ── Render helpers ────────────────────────────────────────────────────────
   function renderDishCards(dishes, count, rawOutput, modelUsed) {
     const cards = dishes.map((dish, i) => `
-      <div class="dish-card" style="animation-delay:${i * 35}ms">
+      <div class="dish-card" style="animation-delay:${i * 40}ms">
         <div class="dish-name">${esc(dish)}</div>
         <div class="dish-desc loading" id="desc-${i}">Loading description…</div>
       </div>`).join('');
 
     const raw = rawOutput
-      ? `<details><summary>▸ Raw output (${esc(modelUsed || '')})</summary><pre>${esc(rawOutput)}</pre></details>`
+      ? `<details><summary>Raw AI output · ${esc(modelUsed || '')}</summary><pre>${esc(rawOutput)}</pre></details>`
       : '';
 
     resultsEl.innerHTML = `
       <div class="results-header">
         <span class="results-title">Dishes found</span>
         <span class="count-badge">${count}</span>
-      </div>${cards}${raw}`;
+      </div>
+      ${cards}
+      ${raw}`;
   }
 
-  // Phase 2: update description divs in-place — no re-render, no re-animation
   function applyDescriptions(dishes, descMap) {
     dishes.forEach((dish, i) => {
       const el = document.getElementById(`desc-${i}`);
       if (!el) return;
       el.classList.remove('loading');
       const text = descMap[dish];
-      if (text) {
-        el.textContent = text;
-      } else {
-        el.style.display = 'none'; // hide if empty
-      }
+      if (text) { el.textContent = text; }
+      else { el.style.display = 'none'; }
     });
   }
 
@@ -341,49 +578,48 @@
     resultsEl.innerHTML = '';
 
     try {
-      const provider = modelSelect.value;
-      const modelName = provider === 'nvidia' ? 'KnightHonorVision' : provider === 'groq' ? 'WizardKnight' : 'KnightXtremeVision';
+      const provider  = modelSelect.value;
+      const modelName = { gemini: 'KnightXtremeVision', nvidia: 'KnightHonorVision', groq: 'WizardKnight' }[provider] || provider;
 
-      setStatus('⏳ Preparing image…');
-      // NVIDIA has a ~180KB base64 limit; shrink more aggressively for it
+      setStatus('Preparing image…');
       const { base64, mimeType } = provider === 'nvidia'
         ? await resizeImage(selectedFile, 600, 0.65)
         : await resizeImage(selectedFile);
 
-      setStatus(`⏳ Reading menu with ${modelName}…`);
-
+      setStatus(`Reading menu with ${modelName}…`);
       const { dishes, count, raw_gemini_output, model_used } = await postJSON('/analyze', {
         image: base64, mimeType, filename: selectedFile.name, provider,
       });
 
       if (!count) {
-        resultsEl.innerHTML = `<div class="error-box">No dishes found. Try a clearer photo of the menu text.</div>`;
+        resultsEl.innerHTML = `<div class="error-box"><strong>No dishes found</strong>Try a clearer, well-lit photo of the menu text.</div>`;
         setStatus('No dishes detected');
         return;
       }
 
-      setStatus(`✅ Found ${count} dish${count !== 1 ? 'es' : ''} · loading descriptions…`);
+      setStatus(`Found ${count} dish${count !== 1 ? 'es' : ''} — loading descriptions…`);
       renderDishCards(dishes, count, raw_gemini_output, model_used);
-      resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      resultsEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-      // Fetch descriptions and update in-place (no re-render)
+      // Phase 2: fetch descriptions and update in-place
       try {
         const { descriptions: arr } = await postJSON('/describe', { dishes });
         const descMap = {};
         arr.forEach(({ dish, description }) => { descMap[dish] = description; });
         applyDescriptions(dishes, descMap);
-        setStatus(`✅ ${count} dish${count !== 1 ? 'es' : ''} · ${esc(model_used || '')}`);
       } catch {
-        // Descriptions are optional — just remove the loading state
+        // Descriptions are optional — quietly remove loading spinners
         dishes.forEach((_, i) => {
           const el = document.getElementById(`desc-${i}`);
           if (el) { el.classList.remove('loading'); el.style.display = 'none'; }
         });
-        setStatus(`✅ ${count} dish${count !== 1 ? 'es' : ''} · ${esc(model_used || '')}`);
       }
+
+      setStatus(`✓  ${count} dish${count !== 1 ? 'es' : ''} · ${esc(model_used || modelName)}`);
+
     } catch (err) {
-      resultsEl.innerHTML = `<div class="error-box">❌ ${esc(err.message)}</div>`;
-      setStatus('Failed');
+      resultsEl.innerHTML = `<div class="error-box"><strong>Something went wrong</strong>${esc(err.message)}</div>`;
+      setStatus('');
     } finally {
       setBusy(false);
     }
