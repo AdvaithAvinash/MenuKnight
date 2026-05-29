@@ -2,194 +2,273 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#c0392b" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>IdliPeek — Peek before you pick</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --red: #c0392b;
+      --red-dark: #a93226;
+      --bg: #fef9f0;
+      --card-bg: #fff;
+      --border: #f0e0c8;
+      --text: #1a1a1a;
+      --muted: #888;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #fef9f0;
-      color: #1a1a1a;
-      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+      padding-bottom: var(--safe-bottom);
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    header {
+      background: var(--red);
+      color: #fff;
+      padding: 1rem 1.25rem 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.3px; }
+    header p  { font-size: 0.78rem; opacity: 0.85; }
+
+    /* ── Main scroll area ───────────────────────────────── */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-width: 600px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* ── Upload card ────────────────────────────────────── */
+    .upload-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      overflow: hidden;
+    }
+
+    .drop-zone {
+      position: relative;
+      padding: 2rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      margin: 0.75rem;
+      transition: border-color 0.2s, background 0.2s;
+      min-height: 140px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2rem 1rem;
+      justify-content: center;
+      gap: 0.5rem;
     }
+    .drop-zone.drag-over, .drop-zone:active {
+      border-color: var(--red);
+      background: #fef3e2;
+    }
+    .drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .drop-zone .icon { font-size: 2.2rem; }
+    .drop-zone .label { font-weight: 700; font-size: 1rem; color: #333; }
+    .drop-zone .sublabel { font-size: 0.8rem; color: var(--muted); }
 
-    header {
-      text-align: center;
-      margin-bottom: 2.5rem;
-    }
-
-    header h1 {
-      font-size: 2.4rem;
-      font-weight: 800;
-      color: #c0392b;
-      letter-spacing: -0.5px;
-    }
-
-    header p {
-      color: #666;
-      margin-top: 0.4rem;
-      font-size: 1rem;
-    }
-
-    .card {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-      padding: 2rem;
-      width: 100%;
-      max-width: 520px;
-    }
-
-    /* Drop zone */
-    .drop-zone {
-      border: 2px dashed #e0c9a6;
-      border-radius: 12px;
-      padding: 2.5rem 1rem;
-      text-align: center;
-      cursor: pointer;
-      transition: background 0.2s, border-color 0.2s;
-      position: relative;
-    }
-
-    .drop-zone:hover, .drop-zone.drag-over {
-      background: #fdf3e3;
-      border-color: #c0392b;
-    }
-
-    .drop-zone input[type="file"] {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      cursor: pointer;
-      width: 100%;
-      height: 100%;
-    }
-
-    .drop-zone .icon { font-size: 2.5rem; }
-    .drop-zone .label {
-      margin-top: 0.75rem;
-      font-weight: 600;
-      color: #444;
-    }
-    .drop-zone .sublabel {
-      font-size: 0.8rem;
-      color: #999;
-      margin-top: 0.3rem;
-    }
-
+    #preview-wrap { position: relative; }
     #preview {
-      margin-top: 1rem;
-      max-height: 200px;
       width: 100%;
-      object-fit: contain;
-      border-radius: 8px;
+      max-height: 260px;
+      object-fit: cover;
       display: none;
     }
+    #preview-clear {
+      display: none;
+      position: absolute;
+      top: 0.5rem; right: 0.5rem;
+      background: rgba(0,0,0,0.55);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 32px; height: 32px;
+      font-size: 1rem;
+      cursor: pointer;
+      line-height: 32px;
+      text-align: center;
+    }
 
-    button#analyzeBtn {
-      margin-top: 1.25rem;
-      width: 100%;
+    .upload-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+      padding: 0.75rem;
+    }
+
+    /* Camera button — opens camera directly on mobile */
+    .btn-camera {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
       padding: 0.85rem;
-      background: #c0392b;
+      background: #fff;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #444;
+      cursor: pointer;
+      position: relative;
+      transition: border-color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-camera:active { border-color: var(--red); background: #fef3e2; }
+    .btn-camera input {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+
+    .btn-analyze {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.85rem;
+      background: var(--red);
       color: #fff;
       border: none;
       border-radius: 10px;
-      font-size: 1rem;
+      font-size: 0.92rem;
       font-weight: 700;
       cursor: pointer;
-      transition: background 0.2s, opacity 0.2s;
+      transition: background 0.15s, opacity 0.2s;
+      -webkit-tap-highlight-color: transparent;
     }
+    .btn-analyze:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-analyze:not(:disabled):active { background: var(--red-dark); }
 
-    button#analyzeBtn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    button#analyzeBtn:hover:not(:disabled) {
-      background: #a93226;
-    }
-
-    /* Status */
+    /* ── Status bar ─────────────────────────────────────── */
     #status {
-      margin-top: 1rem;
-      font-size: 0.9rem;
       text-align: center;
-      color: #888;
+      font-size: 0.85rem;
+      color: var(--muted);
       min-height: 1.2em;
+      padding: 0 0.25rem;
     }
 
-    /* Results */
-    #results {
-      margin-top: 1.5rem;
+    /* ── Progress bar ───────────────────────────────────── */
+    .progress-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
       display: none;
     }
-
-    #results h2 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #333;
-      margin-bottom: 0.75rem;
+    .progress-bar.active { display: block; }
+    .progress-bar::after {
+      content: '';
+      display: block;
+      height: 100%;
+      width: 40%;
+      background: var(--red);
+      border-radius: 2px;
+      animation: slide 1.2s ease-in-out infinite;
+    }
+    @keyframes slide {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(350%); }
     }
 
-    .dish-list {
-      list-style: none;
+    /* ── Results ────────────────────────────────────────── */
+    #results { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .results-header {
       display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 0.1rem;
     }
-
-    .dish-list li {
-      background: #fef3e2;
-      border-left: 4px solid #c0392b;
-      padding: 0.6rem 0.9rem;
-      border-radius: 0 8px 8px 0;
-    }
-
-    .dish-name {
-      font-weight: 600;
-      font-size: 0.95rem;
-    }
-
-    .dish-desc {
-      font-size: 0.82rem;
-      color: #666;
-      margin-top: 0.2rem;
-      line-height: 1.4;
-    }
-
+    .results-title { font-size: 1rem; font-weight: 700; color: #333; }
     .count-badge {
-      display: inline-block;
-      background: #c0392b;
+      background: var(--red);
       color: #fff;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 700;
-      padding: 0.2rem 0.6rem;
+      padding: 0.2rem 0.55rem;
       border-radius: 999px;
-      margin-left: 0.5rem;
     }
 
+    .dish-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+      padding: 0.9rem 1rem;
+      border-left: 4px solid var(--red);
+      animation: fadeUp 0.25s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .dish-name { font-weight: 700; font-size: 1rem; color: var(--text); }
+    .dish-desc { font-size: 0.84rem; color: #555; margin-top: 0.3rem; line-height: 1.45; }
+
+    /* ── Error ──────────────────────────────────────────── */
+    .error-box {
+      background: #fdecea;
+      border: 1px solid #f5c6cb;
+      color: #b71c1c;
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* ── Raw output collapsible ─────────────────────────── */
     details {
-      margin-top: 1rem;
+      background: var(--card-bg);
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
     }
-
     summary {
       cursor: pointer;
+      padding: 0.75rem 1rem;
       font-size: 0.8rem;
-      color: #aaa;
+      color: var(--muted);
       user-select: none;
+      list-style: none;
     }
-
+    summary::-webkit-details-marker { display: none; }
     pre {
-      margin-top: 0.5rem;
-      background: #f5f5f5;
-      border-radius: 8px;
-      padding: 0.75rem;
-      font-size: 0.78rem;
+      padding: 0 1rem 0.75rem;
+      font-size: 0.75rem;
       white-space: pre-wrap;
       word-break: break-word;
       max-height: 200px;
@@ -197,157 +276,216 @@
       color: #555;
     }
 
-    .error-box {
-      background: #fdecea;
-      border: 1px solid #f5c6cb;
-      color: #b71c1c;
-      border-radius: 8px;
-      padding: 0.75rem 1rem;
-      font-size: 0.9rem;
-      margin-top: 1rem;
+    /* ── Footer ─────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 0.75rem;
+      font-size: 0.72rem;
+      color: #ccc;
     }
 
-    footer {
-      margin-top: 2rem;
-      font-size: 0.75rem;
-      color: #ccc;
+    /* ── Desktop tweaks ─────────────────────────────────── */
+    @media (min-width: 600px) {
+      header { padding: 1.1rem 1.5rem; }
+      main { padding: 1.5rem; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>🍛 IdliPeek</h1>
-    <p>Upload a menu photo — we'll tell you what's on it</p>
-  </header>
 
-  <div class="card">
-    <div class="drop-zone" id="dropZone">
-      <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.webp" />
+<header>
+  <div>
+    <h1>🍛 IdliPeek</h1>
+    <p>Peek before you pick</p>
+  </div>
+</header>
+
+<main>
+  <!-- Upload card -->
+  <div class="upload-card">
+    <div id="dropZone" class="drop-zone">
+      <input id="fileGallery" type="file" accept="image/jpeg,image/png,image/webp" />
       <div class="icon">📷</div>
       <div class="label">Tap to choose a menu photo</div>
-      <div class="sublabel">JPG, PNG or WEBP · max 4 MB</div>
+      <div class="sublabel">JPG · PNG · WEBP · max 4 MB</div>
     </div>
 
-    <img id="preview" alt="Menu preview" />
+    <div id="preview-wrap">
+      <img id="preview" alt="Menu preview" />
+      <button id="preview-clear" aria-label="Remove image">✕</button>
+    </div>
 
-    <button id="analyzeBtn" disabled>Analyze Menu</button>
-    <div id="status"></div>
-    <div id="results"></div>
+    <div class="upload-actions">
+      <!-- Camera button — opens rear camera directly on mobile -->
+      <label class="btn-camera">
+        📸 Camera
+        <input id="fileCamera" type="file" accept="image/*" capture="environment" />
+      </label>
+
+      <button id="analyzeBtn" class="btn-analyze" disabled>
+        🔍 Analyze
+      </button>
+    </div>
   </div>
 
-  <footer>Powered by Gemini Vision · IdliPeek v0.1</footer>
+  <div class="progress-bar" id="progressBar"></div>
+  <div id="status"></div>
+  <div id="results"></div>
+</main>
 
-  <script>
-    const fileInput = document.getElementById('fileInput');
-    const dropZone  = document.getElementById('dropZone');
-    const preview   = document.getElementById('preview');
-    const btn       = document.getElementById('analyzeBtn');
-    const status    = document.getElementById('status');
-    const results   = document.getElementById('results');
+<footer>Powered by Gemini Vision · IdliPeek</footer>
 
-    let selectedFile = null;
+<script>
+  const dropZone    = document.getElementById('dropZone');
+  const fileGallery = document.getElementById('fileGallery');
+  const fileCamera  = document.getElementById('fileCamera');
+  const preview     = document.getElementById('preview');
+  const previewClear= document.getElementById('preview-clear');
+  const analyzeBtn  = document.getElementById('analyzeBtn');
+  const statusEl    = document.getElementById('status');
+  const resultsEl   = document.getElementById('results');
+  const progressBar = document.getElementById('progressBar');
 
-    function setFile(file) {
-      if (!file) return;
-      selectedFile = file;
-      preview.src = URL.createObjectURL(file);
-      preview.style.display = 'block';
-      btn.disabled = false;
-      results.style.display = 'none';
-      results.innerHTML = '';
-      status.textContent = `Ready: ${file.name}`;
-    }
+  let selectedFile = null;
 
-    fileInput.addEventListener('change', () => setFile(fileInput.files[0]));
+  // ── File selection ────────────────────────────────────────────────────────
+  function setFile(file) {
+    if (!file) return;
+    selectedFile = file;
+    const url = URL.createObjectURL(file);
+    preview.src = url;
+    preview.style.display = 'block';
+    previewClear.style.display = 'block';
+    dropZone.style.display = 'none';
+    analyzeBtn.disabled = false;
+    setStatus(`Ready: ${file.name}`);
+    resultsEl.innerHTML = '';
+  }
 
-    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-    dropZone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropZone.classList.remove('drag-over');
-      setFile(e.dataTransfer.files[0]);
+  function clearFile() {
+    selectedFile = null;
+    preview.src = '';
+    preview.style.display = 'none';
+    previewClear.style.display = 'none';
+    dropZone.style.display = 'flex';
+    analyzeBtn.disabled = true;
+    setStatus('');
+    resultsEl.innerHTML = '';
+    fileGallery.value = '';
+    fileCamera.value = '';
+  }
+
+  fileGallery.addEventListener('change', () => setFile(fileGallery.files[0]));
+  fileCamera.addEventListener('change',  () => setFile(fileCamera.files[0]));
+  previewClear.addEventListener('click',  clearFile);
+
+  // Drag-and-drop (desktop)
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    setFile(e.dataTransfer.files[0]);
+  });
+
+  // ── UI helpers ────────────────────────────────────────────────────────────
+  function setStatus(msg) { statusEl.textContent = msg; }
+
+  function setBusy(busy) {
+    analyzeBtn.disabled = busy;
+    progressBar.classList.toggle('active', busy);
+  }
+
+  function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
+  }
 
-    btn.addEventListener('click', async () => {
-      if (!selectedFile) return;
+  function esc(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
 
-      btn.disabled = true;
-      status.textContent = '⏳ Reading image…';
-      results.style.display = 'none';
-      results.innerHTML = '';
+  // ── Analyze ───────────────────────────────────────────────────────────────
+  analyzeBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+    setBusy(true);
+    setStatus('⏳ Reading image…');
+    resultsEl.innerHTML = '';
 
-      try {
-        // Read file as base64 and send as JSON — avoids multipart parsing on Netlify
-        const base64 = await readFileAsBase64(selectedFile);
-        status.textContent = '⏳ Sending to Gemini Vision…';
+    try {
+      const base64 = await readFileAsBase64(selectedFile);
+      setStatus('⏳ Sending to Gemini Vision…');
 
-        const res = await fetch('/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            image: base64,
-            mimeType: selectedFile.type,
-            filename: selectedFile.name,
-          }),
-        });
-
-        // Guard against HTML error pages (404/500) before calling .json()
-        const contentType = res.headers.get('content-type') || '';
-        let data;
-        if (contentType.includes('application/json')) {
-          data = await res.json();
-        } else {
-          const text = await res.text();
-          throw new Error(`Server returned HTTP ${res.status} — check Netlify function logs.\n\n${text.slice(0, 400)}`);
-        }
-
-        if (!res.ok) {
-          results.innerHTML = `<div class="error-box">❌ ${escHtml(data.error || 'Unknown error')}</div>`;
-          results.style.display = 'block';
-          status.textContent = 'Error — see above';
-          return;
-        }
-
-        const items = (data.results || data.dishes.map(d => ({ dish: d, description: '' })))
-          .map(({ dish, description }) => `
-            <li>
-              <div class="dish-name">${escHtml(dish)}</div>
-              ${description ? `<div class="dish-desc">${escHtml(description)}</div>` : ''}
-            </li>`).join('');
-        results.innerHTML = `
-          <h2>Dishes found <span class="count-badge">${data.count}</span></h2>
-          <ul class="dish-list">${items}</ul>
-          <details>
-            <summary>Raw Gemini output</summary>
-            <pre>${escHtml(data.raw_gemini_output)}</pre>
-          </details>
-        `;
-        results.style.display = 'block';
-        status.textContent = `✅ Done — ${data.count} dish${data.count !== 1 ? 'es' : ''} extracted`;
-      } catch (err) {
-        results.innerHTML = `<div class="error-box">❌ ${escHtml(err.message)}</div>`;
-        results.style.display = 'block';
-        status.textContent = 'Failed';
-      } finally {
-        btn.disabled = false;
-      }
-    });
-
-    function readFileAsBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]); // strip "data:...;base64," prefix
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+      const res = await fetch('/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: base64,
+          mimeType: selectedFile.type || 'image/jpeg',
+          filename: selectedFile.name,
+        }),
       });
-    }
 
-    function escHtml(str) {
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+      const ct = res.headers.get('content-type') || '';
+      let data;
+      if (ct.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(`Server error (HTTP ${res.status}):\n${text.slice(0, 400)}`);
+      }
+
+      if (!res.ok) {
+        resultsEl.innerHTML = `<div class="error-box">❌ ${esc(data.error || 'Unknown error')}</div>`;
+        setStatus('Error — see above');
+        return;
+      }
+
+      if (!data.count) {
+        resultsEl.innerHTML = `<div class="error-box">No dishes found. Try a clearer photo of the menu.</div>`;
+        setStatus('No dishes detected');
+        return;
+      }
+
+      setStatus('⏳ Generating descriptions…');
+
+      const items = (data.results || data.dishes.map(d => ({ dish: d, description: '' })))
+        .map(({ dish, description }, i) => `
+          <div class="dish-card" style="animation-delay:${i * 40}ms">
+            <div class="dish-name">${esc(dish)}</div>
+            ${description ? `<div class="dish-desc">${esc(description)}</div>` : ''}
+          </div>`).join('');
+
+      resultsEl.innerHTML = `
+        <div class="results-header">
+          <span class="results-title">Dishes found</span>
+          <span class="count-badge">${data.count}</span>
+        </div>
+        ${items}
+        <details>
+          <summary>▸ Raw Gemini output</summary>
+          <pre>${esc(data.raw_gemini_output)}</pre>
+        </details>`;
+
+      setStatus(`✅ ${data.count} dish${data.count !== 1 ? 'es' : ''} · ${esc(data.model_used || '')}`);
+
+      // Scroll results into view on mobile
+      resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    } catch (err) {
+      resultsEl.innerHTML = `<div class="error-box">❌ ${esc(err.message)}</div>`;
+      setStatus('Failed');
+    } finally {
+      setBusy(false);
     }
-  </script>
+  });
+</script>
 </body>
 </html>
