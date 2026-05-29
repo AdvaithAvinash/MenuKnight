@@ -1,25 +1,31 @@
 // Phase 1 of 2: Vision-only — extract dish names from image
-// Kept lean so it comfortably fits inside Netlify's 10s free-tier timeout
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 
 const EXTRACT_PROMPT =
   "You are a menu reader. Extract only the food dish names from this menu image. " +
   "Ignore prices, calorie counts, section headers, and descriptions. " +
   "Return one dish name per line, nothing else.";
 
-const MODELS = [
+const GEMINI_MODELS = [
   "gemini-2.5-flash",
   "gemini-2.0-flash",
   "gemini-2.0-flash-001",
   "gemini-flash-latest",
   "gemini-2.5-flash-lite",
 ];
-
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+
+const NVIDIA_MODELS = [
+  "nvidia/neva-22b",
+  "meta/llama-3.2-11b-vision-instruct",
+  "microsoft/phi-3.5-vision-instruct",
+];
+const NVIDIA_BASE = "https://integrate.api.nvidia.com/v1";
 
 async function callGeminiVision(image, mimeType) {
   let lastErr = "No models tried";
-  for (const model of MODELS) {
+  for (const model of GEMINI_MODELS) {
     const url = `${GEMINI_BASE}/${model}:generateContent?key=${GEMINI_API_KEY}`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 9000);
@@ -49,6 +55,48 @@ async function callGeminiVision(image, mimeType) {
     return { text: data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "", model };
   }
   throw new Error(`Gemini Vision failed. Last: ${lastErr}`);
+}
+
+async function callNvidiaVision(image, mimeType) {
+  let lastErr = "No NVIDIA models tried";
+  for (const model of NVIDIA_MODELS) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 9000);
+    let res;
+    try {
+      res = await fetch(`${NVIDIA_BASE}/chat/completions`, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${NVIDIA_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{
+            role: "user",
+            content: [
+              { type: "text", text: EXTRACT_PROMPT },
+              { type: "image_url", image_url: { url: `data:${mimeType};base64,${image}` } },
+            ],
+          }],
+          max_tokens: 1024,
+        }),
+      });
+    } catch (e) {
+      lastErr = e.name === "AbortError" ? `${model} timed out` : `Network error: ${e.message}`;
+      continue;
+    } finally { clearTimeout(timer); }
+
+    const body = await res.text();
+    if (res.status === 404) { lastErr = `${model} → 404`; continue; }
+    if (!res.ok) { lastErr = `${model} → ${res.status}: ${body.slice(0, 150)}`; continue; }
+
+    const data = JSON.parse(body);
+    const text = data?.choices?.[0]?.message?.content ?? "";
+    return { text, model };
+  }
+  throw new Error(`NVIDIA NIM Vision failed. Last: ${lastErr}`);
 }
 
 function parseDishes(raw) {
@@ -84,21 +132,28 @@ function resp(statusCode, data) {
 exports.handler = async (event) => {
   const method = event.httpMethod;
   if (method === "OPTIONS") return resp(200, {});
-  if (method === "GET") return resp(200, { status: "ok", service: "IdliPeek/analyze" });
+  if (method === "GET") return resp(200, { status: "ok", service: "MenuKnight/analyze" });
   if (method !== "POST") return resp(405, { error: "Method not allowed" });
-  if (!GEMINI_API_KEY) return resp(500, { error: "GEMINI_API_KEY not set in Netlify environment variables." });
 
   let body;
   try { body = JSON.parse(event.body); }
   catch { return resp(400, { error: "Body must be JSON" }); }
 
-  const { image, mimeType, filename = "upload" } = body;
+  const { image, mimeType, filename = "upload", provider = "gemini" } = body;
   if (!image || !mimeType) return resp(400, { error: "Missing: image (base64) and mimeType" });
   if (!["image/jpeg", "image/png", "image/webp"].includes(mimeType)) return resp(400, { error: `Unsupported mimeType '${mimeType}'` });
   if (image.length > 5_600_000) return resp(400, { error: "Image too large. Max ~4 MB." });
 
+  if (provider === "nvidia") {
+    if (!NVIDIA_API_KEY) return resp(500, { error: "NVIDIA_API_KEY not set in Netlify environment variables." });
+  } else {
+    if (!GEMINI_API_KEY) return resp(500, { error: "GEMINI_API_KEY not set in Netlify environment variables." });
+  }
+
   try {
-    const { text: rawText, model } = await callGeminiVision(image, mimeType);
+    const { text: rawText, model } = provider === "nvidia"
+      ? await callNvidiaVision(image, mimeType)
+      : await callGeminiVision(image, mimeType);
     const dishes = parseDishes(rawText);
     return resp(200, { filename, dishes, count: dishes.length, raw_gemini_output: rawText, model_used: model });
   } catch (e) {
