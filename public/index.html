@@ -251,24 +251,35 @@
   function setBusy(on) { analyzeBtn.disabled = on || !selectedFile; progressBar.classList.toggle('active', on); }
   function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  function resizeImage(file, maxPx = 1200, quality = 0.82) {
+  // maxPx/quality tuned per provider:
+  //   gemini/groq → 900px/0.72  (~80-120KB base64, fast upload)
+  //   nvidia      → 600px/0.65  (<80KB, within NVIDIA NIM's inline-base64 limit)
+  function resizeImage(file, maxPx = 900, quality = 0.72) {
     return new Promise((resolve) => {
-      const img = new Image();
-      const blobUrl = URL.createObjectURL(file);
-      img.onload = () => {
-        const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
-        const canvas = document.createElement('canvas');
-        canvas.width  = Math.round(img.width  * scale);
-        canvas.height = Math.round(img.height * scale);
-        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        URL.revokeObjectURL(blobUrl);
-        resolve({ base64: canvas.toDataURL('image/jpeg', quality).split(',')[1], mimeType: 'image/jpeg' });
-      };
-      img.onerror = () => {
+      const fallback = () => {
         const reader = new FileReader();
         reader.onload = () => resolve({ base64: reader.result.split(',')[1], mimeType: file.type });
         reader.readAsDataURL(file);
       };
+      const img = new Image();
+      const blobUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        try {
+          const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width  = Math.round(img.width  * scale);
+          canvas.height = Math.round(img.height * scale);
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('no ctx');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(blobUrl);
+          resolve({ base64: canvas.toDataURL('image/jpeg', quality).split(',')[1], mimeType: 'image/jpeg' });
+        } catch {
+          URL.revokeObjectURL(blobUrl);
+          fallback();
+        }
+      };
+      img.onerror = () => { URL.revokeObjectURL(blobUrl); fallback(); };
       img.src = blobUrl;
     });
   }
@@ -330,11 +341,15 @@
     resultsEl.innerHTML = '';
 
     try {
-      setStatus('⏳ Preparing image…');
-      const { base64, mimeType } = await resizeImage(selectedFile);
-
       const provider = modelSelect.value;
-      const modelName = provider === 'nvidia' ? 'KnightHonorVision' : 'KnightXtremeVision';
+      const modelName = provider === 'nvidia' ? 'KnightHonorVision' : provider === 'groq' ? 'WizardKnight' : 'KnightXtremeVision';
+
+      setStatus('⏳ Preparing image…');
+      // NVIDIA has a ~180KB base64 limit; shrink more aggressively for it
+      const { base64, mimeType } = provider === 'nvidia'
+        ? await resizeImage(selectedFile, 600, 0.65)
+        : await resizeImage(selectedFile);
+
       setStatus(`⏳ Reading menu with ${modelName}…`);
 
       const { dishes, count, raw_gemini_output, model_used } = await postJSON('/analyze', {
