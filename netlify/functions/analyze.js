@@ -1,6 +1,7 @@
 // Phase 1 of 2: Vision-only — extract dish names from image
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+const GROQ_API_KEY   = process.env.GROQ_API_KEY;
 
 const EXTRACT_PROMPT =
   "You are a menu reader. Extract only the food dish names from this menu image. " +
@@ -22,6 +23,41 @@ const NVIDIA_MODELS = [
   "microsoft/phi-3.5-vision-instruct",
 ];
 const NVIDIA_BASE = "https://integrate.api.nvidia.com/v1";
+const GROQ_BASE   = "https://api.groq.com/openai/v1";
+
+async function callGroqVision(image, mimeType) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 9000);
+  let res;
+  try {
+    res = await fetch(`${GROQ_BASE}/chat/completions`, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "meta-llama/llama-4-scout-17b-16e-instruct",
+        messages: [{
+          role: "user",
+          content: [
+            { type: "text", text: EXTRACT_PROMPT },
+            { type: "image_url", image_url: { url: `data:${mimeType};base64,${image}` } },
+          ],
+        }],
+        max_tokens: 1024,
+      }),
+    });
+  } catch (e) {
+    throw new Error(e.name === "AbortError" ? "WizardKnight timed out" : `Network error: ${e.message}`);
+  } finally { clearTimeout(timer); }
+
+  const body = await res.text();
+  if (!res.ok) throw new Error(`WizardKnight → ${res.status}: ${body.slice(0, 150)}`);
+  const data = JSON.parse(body);
+  return { text: data?.choices?.[0]?.message?.content ?? "", model: "meta-llama/llama-4-scout-17b-16e-instruct" };
+}
 
 async function callGeminiVision(image, mimeType) {
   let lastErr = "No models tried";
@@ -144,16 +180,15 @@ exports.handler = async (event) => {
   if (!["image/jpeg", "image/png", "image/webp"].includes(mimeType)) return resp(400, { error: `Unsupported mimeType '${mimeType}'` });
   if (image.length > 5_600_000) return resp(400, { error: "Image too large. Max ~4 MB." });
 
-  if (provider === "nvidia") {
-    if (!NVIDIA_API_KEY) return resp(500, { error: "NVIDIA_API_KEY not set in Netlify environment variables." });
-  } else {
-    if (!GEMINI_API_KEY) return resp(500, { error: "GEMINI_API_KEY not set in Netlify environment variables." });
-  }
+  if (provider === "nvidia" && !NVIDIA_API_KEY) return resp(500, { error: "NVIDIA_API_KEY not set in Netlify environment variables." });
+  if (provider === "groq"   && !GROQ_API_KEY)   return resp(500, { error: "GROQ_API_KEY not set in Netlify environment variables." });
+  if (provider === "gemini" && !GEMINI_API_KEY)  return resp(500, { error: "GEMINI_API_KEY not set in Netlify environment variables." });
 
   try {
-    const { text: rawText, model } = provider === "nvidia"
-      ? await callNvidiaVision(image, mimeType)
-      : await callGeminiVision(image, mimeType);
+    const { text: rawText, model } =
+      provider === "nvidia" ? await callNvidiaVision(image, mimeType) :
+      provider === "groq"   ? await callGroqVision(image, mimeType)   :
+                              await callGeminiVision(image, mimeType);
     const dishes = parseDishes(rawText);
     return resp(200, { filename, dishes, count: dishes.length, raw_gemini_output: rawText, model_used: model });
   } catch (e) {

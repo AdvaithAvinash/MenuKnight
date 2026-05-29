@@ -89,6 +89,7 @@
     }
     .badge-google { background: #e8f0fe; color: #1a73e8; }
     .badge-nvidia { background: #e6f4ea; color: #137333; }
+    .badge-groq   { background: #fff3e0; color: #e65100; }
 
     .upload-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; padding: .6rem .75rem .75rem; }
     .btn-camera { display: flex; align-items: center; justify-content: center; gap: .4rem;
@@ -170,6 +171,7 @@
       <select id="modelSelect" class="model-select">
         <option value="gemini">⚔️ KnightXtremeVision</option>
         <option value="nvidia">🛡️ KnightHonorVision</option>
+        <option value="groq">🧙 WizardKnight</option>
       </select>
       <span id="modelBadge" class="model-badge badge-google">Google</span>
     </div>
@@ -187,7 +189,7 @@
   <div id="statusEl"></div>
   <div id="results"></div>
 </main>
-<footer>Powered by Gemini & NVIDIA NIM · MenuKnight</footer>
+<footer>Powered by Gemini · NVIDIA NIM · Groq · MenuKnight</footer>
 
 <script>
   // ── File selection ────────────────────────────────────────────────────────
@@ -207,9 +209,11 @@
 
   // Update badge when model changes
   modelSelect.addEventListener('change', () => {
-    const isNvidia = modelSelect.value === 'nvidia';
-    modelBadge.textContent = isNvidia ? 'NVIDIA' : 'Google';
-    modelBadge.className   = 'model-badge ' + (isNvidia ? 'badge-nvidia' : 'badge-google');
+    const v = modelSelect.value;
+    const labels = { gemini: ['Google', 'badge-google'], nvidia: ['NVIDIA', 'badge-nvidia'], groq: ['Groq', 'badge-groq'] };
+    const [label, cls] = labels[v] || labels.gemini;
+    modelBadge.textContent = label;
+    modelBadge.className   = 'model-badge ' + cls;
   });
 
   function setFile(file) {

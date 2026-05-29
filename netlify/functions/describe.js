@@ -1,36 +1,68 @@
-// Phase 2 of 2: Text-only — batch description generation for a list of dishes
+// Phase 2 of 2: Text-only — batch description generation
+// Groq is tried first (fast), Gemini is the fallback
+const GROQ_API_KEY   = process.env.GROQ_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-const MODELS = [
+const GEMINI_MODELS = [
   "gemini-2.5-flash",
   "gemini-2.0-flash",
   "gemini-2.0-flash-001",
   "gemini-flash-latest",
   "gemini-2.5-flash-lite",
 ];
-
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+const GROQ_BASE   = "https://api.groq.com/openai/v1";
+
+const DESCRIBE_PROMPT =
+  "For each dish below write a 1-2 sentence description for a first-time traveler. " +
+  "Be friendly and specific.\n" +
+  "Return ONLY a valid JSON array, no markdown fences:\n" +
+  '[{"dish":"Name","description":"Description."}]\n\nDishes:\n';
 
 // Warm-invocation cache — persists while Lambda container is alive
 const _cache = new Map();
 
-async function fetchDescriptions(dishes) {
-  const result = {};
-  const uncached = dishes.filter((d) => !_cache.has(d.toLowerCase()));
+function parseDescriptionJSON(text, uncached, result) {
+  const match = text.match(/\[[\s\S]*\]/);
+  if (!match) return;
+  JSON.parse(match[0]).forEach(({ dish, description }) => {
+    if (dish) {
+      result[dish] = description || "";
+      _cache.set(dish.toLowerCase(), description || "");
+    }
+  });
+}
 
-  // Serve cached first
-  dishes.forEach((d) => { if (_cache.has(d.toLowerCase())) result[d] = _cache.get(d.toLowerCase()); });
+async function fetchViaGroq(uncached) {
+  const prompt = DESCRIBE_PROMPT + uncached.map((d) => `- ${d}`).join("\n");
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  let res;
+  try {
+    res = await fetch(`${GROQ_BASE}/chat/completions`, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 2048,
+        temperature: 0.5,
+      }),
+    });
+  } finally { clearTimeout(timer); }
 
-  if (!uncached.length) return result;
+  if (!res.ok) throw new Error(`Groq ${res.status}`);
+  const data = await res.json();
+  return data?.choices?.[0]?.message?.content ?? "";
+}
 
-  const prompt =
-    "For each dish below write a 1-2 sentence description for a first-time traveler. " +
-    "Be friendly and specific.\n" +
-    "Return ONLY a valid JSON array, no markdown fences:\n" +
-    '[{"dish":"Name","description":"Description."}]\n\nDishes:\n' +
-    uncached.map((d) => `- ${d}`).join("\n");
-
-  for (const model of MODELS) {
+async function fetchViaGemini(uncached) {
+  const prompt = DESCRIBE_PROMPT + uncached.map((d) => `- ${d}`).join("\n");
+  for (const model of GEMINI_MODELS) {
     const url = `${GEMINI_BASE}/${model}:generateContent?key=${GEMINI_API_KEY}`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 9000);
@@ -47,20 +79,30 @@ async function fetchDescriptions(dishes) {
 
     if (!res.ok) continue;
     const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  }
+  throw new Error("All Gemini models failed");
+}
 
-    try {
-      const match = text.match(/\[[\s\S]*\]/);
-      if (match) {
-        JSON.parse(match[0]).forEach(({ dish, description }) => {
-          if (dish) {
-            result[dish] = description || "";
-            _cache.set(dish.toLowerCase(), description || "");
-          }
-        });
-      }
-    } catch { /* return empty descriptions */ }
-    break;
+async function fetchDescriptions(dishes) {
+  const result = {};
+  const uncached = dishes.filter((d) => !_cache.has(d.toLowerCase()));
+  dishes.forEach((d) => { if (_cache.has(d.toLowerCase())) result[d] = _cache.get(d.toLowerCase()); });
+  if (!uncached.length) return result;
+
+  let text = "";
+  if (GROQ_API_KEY) {
+    try { text = await fetchViaGroq(uncached); }
+    catch { /* fall through to Gemini */ }
+  }
+  if (!text && GEMINI_API_KEY) {
+    try { text = await fetchViaGemini(uncached); }
+    catch { /* return what we have */ }
+  }
+
+  if (text) {
+    try { parseDescriptionJSON(text, uncached, result); }
+    catch { /* ignore parse errors */ }
   }
 
   return result;
@@ -83,7 +125,7 @@ exports.handler = async (event) => {
   const method = event.httpMethod;
   if (method === "OPTIONS") return resp(200, {});
   if (method !== "POST") return resp(405, { error: "Method not allowed" });
-  if (!GEMINI_API_KEY) return resp(500, { error: "GEMINI_API_KEY not set." });
+  if (!GROQ_API_KEY && !GEMINI_API_KEY) return resp(500, { error: "No AI API key configured." });
 
   let body;
   try { body = JSON.parse(event.body); }
